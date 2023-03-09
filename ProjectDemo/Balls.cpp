@@ -32,6 +32,7 @@ Balls::Balls(RectangleShape paddle, int state)
 	// 1: attached to paddle
 	// 0: dead
 	// -1: detached from paddle
+	// 2: collided
 	this->initVariables(state);
 	this->initShape();
 	this->initPos(paddle.getPosition());
@@ -39,7 +40,7 @@ Balls::Balls(RectangleShape paddle, int state)
 
 Balls::~Balls()
 {
-	
+
 }
 
 // Accessors
@@ -47,6 +48,11 @@ Balls::~Balls()
 int Balls::getState()
 {
 	return this->state;
+}
+
+CircleShape Balls::getShape()
+{
+	return this->shape;
 }
 
 // public functions
@@ -62,6 +68,7 @@ void Balls::launch()
 	{
 		this->direction.y = -1.f;
 		this->state = -1;
+		this->shape.move(this->speed * this->direction.x, this->speed * this->direction.y);
 	}
 }
 
@@ -72,10 +79,15 @@ void Balls::checkBoundCollision(RenderTarget* target)
 	float circleRad = this->shape.getRadius();
 	// Collision with topBound
 	if (circlePos.y < circleRad)
+	{
 		this->direction.y *= -1;
+	}
 	// Collision with LeftBound or RightBound
 	if (circlePos.x < circleRad || circlePos.x > windowSize.x - circleRad)
+	{
 		this->direction.x *= -1;
+	}
+
 	// Deadball
 	if (circlePos.y - windowSize.y > 50.f)
 		this->state = 0;
@@ -83,41 +95,74 @@ void Balls::checkBoundCollision(RenderTarget* target)
 
 void Balls::checkPaddleCollision(RectangleShape paddle)
 {
-	Vector2f circlePos = this->shape.getPosition();
+	Vector2f ballPos = this->shape.getPosition();
 	Vector2f paddlePos = paddle.getPosition();
 	FloatRect ballBounds = this->shape.getGlobalBounds();
 	FloatRect paddleBounds = paddle.getGlobalBounds();
-	if (ballBounds.intersects(paddleBounds))
+	if (ballBounds.intersects(paddleBounds) && this->state == -1)
 	{
-		//this->direction.y *= -1;
-		float dist = circlePos.x - paddlePos.x;
-		float sgn = dist / abs(dist);
-		float var1 = dist / paddleBounds.width;
-		float var2 = this->direction.x / this->speed;
-		float alpha = acos(var1) - asin(var1) - acos(var2);
-		if (alpha == 0)
-			this->direction.y *= -1;
-		else
-		{
-			alpha = -sgn * M_PI_2 - alpha;
-			cout << alpha * 180 / M_PI << endl;
-			this->direction.x = cos(alpha) * sgn;
-			this->direction.y = sin(alpha) * sgn;
-			
+		float dist = 2 * (ballPos.x - paddlePos.x) / paddleBounds.width;
+		float a = M_PI / 3;
+		float b = -M_PI_2;
+		float alpha = a * dist + b;
+		this->direction.x = cos(alpha);
+		this->direction.y = sin(alpha);
+	}
+}
+
+void Balls::checkBrickCollision(Brick *bricks[20][20])
+{
+	for (int i = 0; i < 20; i++) {
+		for (int j = 0; j < 20; j++) {
+			if (bricks[i][j] == nullptr)
+				continue;
+			switch (bricks[i][j]->checkBallCollision(this->shape)) 
+			{
+			// Vertical Collision
+			case -1:
+				if (state != 2)
+				{
+					this->direction.y *= -1;
+					this->state = 2;
+				}
+				
+				break;
+			// Horizontal Collision
+			case 1:
+				if (state != 2)
+				{
+					this->direction.x *= -1;
+					this->state = 2;
+				}
+				break;
+			// Corner Cases
+			case 2:
+				if (state != 2)
+				{
+					this->direction.x *= -1;
+					this->direction.y *= -1;
+					this->state = 2;
+				}
+				break;
+			}
 		}
 	}
 }
 
-void Balls::update(Paddle* paddle, RenderTarget* target)
+void Balls::update(Paddle* paddle, Brick *bricks[20][20], RenderTarget* target)
 {
 	if (this->state == 1)
 		updateAttached(paddle->getShape());
-	else if (this->state == -1)
-	{
-		this->shape.move(this->speed * this->direction.x, this->speed * this->direction.y);
+	else
+	{	
+		this->state = -1;
 		this->checkBoundCollision(target);
 		this->checkPaddleCollision(paddle->getShape());
+		this->checkBrickCollision(bricks);
+		this->shape.move(this->speed * this->direction.x, this->speed * this->direction.y);
 	}
+
+
 }
 
 void Balls::render(RenderTarget* target)

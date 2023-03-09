@@ -2,6 +2,7 @@
 
 #include "pch.h"
 #include "Paddle.h"
+#include "Brick.h"
 
 using namespace sf;
 using namespace std;
@@ -27,13 +28,15 @@ public:
 	
 	// Accessors
 	int getState();
+	CircleShape getShape();
 
 	// Functions
 	void updateAttached(RectangleShape paddle);
 	void launch();
 	void checkBoundCollision(RenderTarget* target);
 	void checkPaddleCollision(RectangleShape paddle);
-	void update(Paddle* paddle, RenderTarget* target);
+	void checkBrickCollision(Brick *bricks[20][20]);
+	void update(Paddle* paddle, Brick *bricks[20][20], RenderTarget* target);
 	void render(RenderTarget* target);
 };
 

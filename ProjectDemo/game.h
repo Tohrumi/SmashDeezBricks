@@ -3,6 +3,7 @@
 #include "pch.h"
 #include "Paddle.h"
 #include "Balls.h"
+#include "Brick.h"
 
 using namespace sf;
 using namespace std;
@@ -20,9 +21,11 @@ private:
 
 	Paddle* paddle;
 	vector<Balls> balls;
+	Brick *bricks[20][20];
 
 	void initWindow();
 	void initVariables();
+	void initStage();
 
 public:
 	// Constructor & Destructor
@@ -35,8 +38,13 @@ public:
 	// Functions
 	void pollEvents();
 	void spawnBall();
-	void renderBall();
 	void updateBall();
+	void renderBall();
+	
+	void spawnBrick();
+	void updateBrick();
+	void renderBrick();
+
 	void update();
 	void render();
 };

@@ -4,8 +4,8 @@
 // Private Functions
 void Game::initWindow()
 {
-	this->videoMode.height = 600;
-	this->videoMode.width = 800;
+	this->videoMode.height = 800;
+	this->videoMode.width = 840;
 	this->window = new RenderWindow(this->videoMode, "Demo", Style::Titlebar | Style::Close);
 	this->window->setFramerateLimit(60);
 
@@ -15,12 +15,19 @@ void Game::initVariables()
 	this->paddle = nullptr;
 	this->paddle = new Paddle(this->window);
 }
+void Game::initStage()
+{
+	for (int i = 0; i < 20; i++)
+		for (int j = 0; j < 20; j++)
+			this->bricks[i][j] = new Brick(Vector2f(20 + i * 40, 20 + j * 30), 1);
+}
 
 // Contructor & Destructor
 Game::Game()
 {
 	this->initWindow();
 	this->initVariables();
+	this->initStage();
 }
 
 Game::~Game()
@@ -72,6 +79,27 @@ void Game::renderBall()
 	}
 }
 
+void Game::updateBrick()
+{
+	for (int i = 0; i < 20; i++) {
+		for (int j = 0; j < 20; j++) {
+			if (this->bricks[i][j] == nullptr)
+				continue;
+			if (this->bricks[i][j]->getHitPoint() <= 0)
+				this->bricks[i][j] = nullptr;
+		}
+	}
+	
+}
+
+void Game::renderBrick()
+{
+	for (int i = 0; i < 20; i++)
+		for (int j = 0; j < 20; j++)
+			if(this->bricks[i][j] != nullptr)
+				this->bricks[i][j]->render(this->window);	
+}
+
 void Game::updateBall()
 {
 	bool isLaunched = 0;
@@ -81,7 +109,7 @@ void Game::updateBall()
 	{	
 		if (isLaunched)
 			this->balls[i].launch();
-		this->balls[i].update(this->paddle, this->window);
+		this->balls[i].update(this->paddle, this->bricks, this->window);
 	}
 }
 
@@ -90,16 +118,17 @@ void Game::update()
 	this->spawnBall();
 	this->pollEvents();
 	this->paddle->update(this->window);
-	this->updateBall();
-	
+	this->updateBrick();
+	this->updateBall(); 
 }
 
-void Game::render()
+void Game::render()	
 {
 	this->window->clear(Color::Black);
 
 	// draw game objects
 	this->paddle->render(this->window);
+	this->renderBrick();
 	this->renderBall();
 	this->window->display();
 }
